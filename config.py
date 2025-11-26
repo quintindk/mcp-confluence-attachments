@@ -32,7 +32,7 @@ class Settings(BaseSettings):
         description='Enable auto-reload in development'
     )
 
-    TRANSPORT: str = Field(
+    MCP_TRANSPORT: str = Field(
         default='stdio',
         description='Transport mode (stdio, sse, http)'
     )
@@ -71,7 +71,7 @@ class Settings(BaseSettings):
             raise ValueError(f'Invalid log level: {v}')
         return v
 
-    @field_validator('TRANSPORT')
+    @field_validator('MCP_TRANSPORT')
     def validate_transport(cls, v):
         if not v:
             return 'stdio'

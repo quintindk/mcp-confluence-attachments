@@ -290,7 +290,7 @@ def get_application():
 
 
 if __name__ == "__main__":
-    transport = settings.TRANSPORT.lower()
+    transport = settings.MCP_TRANSPORT.lower()
 
     if transport == 'stdio':
         log(f"Starting Confluence Attachments MCP Server with stdio transport")
