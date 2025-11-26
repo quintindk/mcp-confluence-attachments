@@ -45,6 +45,23 @@ Build the Docker image:
 docker build -t mcp-confluence-attachments .
 ```
 
+### Quick Start with Claude Code (Recommended)
+
+If you're using Claude Code, you can add the MCP server with a single command:
+
+```bash
+claude mcp add confluence-attachments -s user -- sh -c "docker run -i --rm -e MCP_DEBUG=false -v \$(pwd):/app -e LOG_LEVEL=INFO -e MCP_TRANSPORT=stdio -e CONFLUENCE_URL=https://your-instance.atlassian.net -e CONFLUENCE_PERSONAL_TOKEN=\$CONFLUENCE_TOKEN mcp-confluence-attachments"
+```
+
+**Important notes:**
+- Replace `https://your-instance.atlassian.net` with your Confluence URL
+- Set the `CONFLUENCE_TOKEN` environment variable in your shell before running this command:
+  ```bash
+  export CONFLUENCE_TOKEN="your_personal_access_token"
+  ```
+- The `-v $(pwd):/app` volume mount ensures downloaded files appear in your current working directory
+- The `-s user` flag installs the server for your user account only
+
 ## MCP Server Usage
 
 The MCP server exposes four tools for working with Confluence attachments:
@@ -92,12 +109,35 @@ The server will start at `http://0.0.0.0:8080` with:
 - SSE endpoint: `http://0.0.0.0:8080/sse`
 - Tools listing: `http://0.0.0.0:8080/tools`
 
-### Claude Desktop Configuration
+### Claude Desktop Configuration (Manual Method)
 
-Add to your Claude Desktop config file:
+**Note:** If you're using Claude Code, use the `claude mcp add` command shown in the Quick Start section above instead of manually editing config files.
+
+For Claude Desktop, add to your config file:
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
+#### Using Docker (Recommended):
+```json
+{
+  "mcpServers": {
+    "confluence-attachments": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "cd \"$(pwd)\" && docker run -i --rm -v $(pwd):/app -e MCP_TRANSPORT=stdio -e CONFLUENCE_URL=https://your-instance.atlassian.net -e CONFLUENCE_PERSONAL_TOKEN=$CONFLUENCE_TOKEN mcp-confluence-attachments"
+      ]
+    }
+  }
+}
+```
+
+Set the `CONFLUENCE_TOKEN` environment variable in your shell:
+```bash
+export CONFLUENCE_TOKEN="your_personal_access_token"
+```
+
+#### Using Python Directly:
 ```json
 {
   "mcpServers": {
@@ -159,6 +199,24 @@ export CONFLUENCE_PERSONAL_TOKEN="your_token_here"
 ## Docker Usage
 
 The Docker container runs the MCP server by default, making it easy to deploy as a service.
+
+### Running the MCP Server (Stdio Mode with Volume Mount)
+
+For stdio mode (used by Claude Code and Claude Desktop), you need to mount your current directory so downloaded files appear on the host:
+
+```bash
+docker run -i --rm \
+  -v $(pwd):/app \
+  -e MCP_TRANSPORT=stdio \
+  -e CONFLUENCE_URL="https://your-instance.atlassian.net" \
+  -e CONFLUENCE_PERSONAL_TOKEN="your-token-here" \
+  mcp-confluence-attachments
+```
+
+**Why the volume mount?**
+- Without `-v $(pwd):/app`, files are written inside the container and aren't accessible on your host
+- The mount makes the current directory available at `/app` in the container (the container's working directory)
+- Downloaded files will appear in your current directory on the host
 
 ### Running the MCP Server (HTTP/SSE Mode)
 
