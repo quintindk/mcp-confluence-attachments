@@ -40,7 +40,16 @@ cp .env.example .env
 
 ### Docker Installation
 
-Build the Docker image:
+#### Option 1: Pull from Docker Hub (Recommended)
+
+Pull the pre-built image:
+```bash
+docker pull quintindk/mcp-confluence-attachments:latest
+```
+
+#### Option 2: Build Locally
+
+Build the Docker image yourself:
 ```bash
 docker build -t mcp-confluence-attachments .
 ```
@@ -320,14 +329,18 @@ It automatically skips:
 
 ```
 mcp-confluence-attachments/
-├── confluence_mcp_server.py   # Main MCP server
-├── confluence_client.py       # Confluence API client wrapper
-├── config.py                  # Configuration management
-├── download_attachments.py    # Standalone CLI tool
-├── requirements.txt           # Python dependencies
-├── .env.example              # Environment variable template
-├── Dockerfile                # Docker container definition
-└── README.md                 # This file
+├── .github/
+│   └── workflows/
+│       └── docker-publish.yml    # GitHub Actions CI/CD workflow
+├── confluence_mcp_server.py      # Main MCP server
+├── confluence_client.py          # Confluence API client wrapper
+├── config.py                     # Configuration management
+├── download_attachments.py       # Standalone CLI tool
+├── requirements.txt              # Python dependencies
+├── .env.example                  # Environment variable template
+├── Dockerfile                    # Docker container definition
+├── CICD_SETUP.md                 # CI/CD setup guide
+└── README.md                     # This file
 ```
 
 ## Troubleshooting
@@ -351,6 +364,33 @@ If the server can't connect to Confluence:
 - Verify your CONFLUENCE_URL is correct (include https://)
 - Check your network connection and firewall settings
 - Try accessing the Confluence URL in a web browser
+
+## CI/CD and Publishing
+
+This project includes automated Docker image builds and publishing to Docker Hub using GitHub Actions.
+
+### Automated Builds
+
+Every push to the `main` branch automatically:
+- Builds a multi-platform Docker image (amd64 and arm64)
+- Pushes the image to Docker Hub with the `latest` tag
+- Updates the Docker Hub repository description
+
+Version tags (e.g., `v1.0.0`) automatically create versioned images:
+- `yourusername/mcp-confluence-attachments:v1.0.0`
+- `yourusername/mcp-confluence-attachments:v1.0`
+- `yourusername/mcp-confluence-attachments:v1`
+
+### Setting Up CI/CD for Your Fork
+
+If you fork this repository and want to publish to your own Docker Hub account:
+
+1. Read the detailed setup guide: [CICD_SETUP.md](CICD_SETUP.md)
+2. Create a Docker Hub access token
+3. Add `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets to your GitHub repository
+4. Push to `main` or create a version tag
+
+The workflow file is located at `.github/workflows/docker-publish.yml`.
 
 ## License
 
