@@ -6,6 +6,32 @@ import sys
 from atlassian import Confluence
 
 
+def resolve_output_path(path: str) -> str:
+    """Resolve output path for Docker container environment.
+
+    When running in Docker with a mounted /output directory, this function
+    ensures that relative paths are written to /output instead of /app.
+
+    Args:
+        path: The path provided by the user (relative or absolute)
+
+    Returns:
+        Resolved absolute path appropriate for the environment
+    """
+    # If path is already absolute, use it as-is
+    if os.path.isabs(path):
+        return path
+
+    # Check if we're in a Docker container with /output mount
+    # We detect this by checking if /output exists and we're not in a standard dev environment
+    if os.path.exists('/output') and not os.path.exists('/output/.git'):
+        # Prepend /output/ to relative paths
+        return os.path.join('/output', path)
+
+    # For local development, use the path as provided (relative to current directory)
+    return path
+
+
 def download_attachments(confluence_url, token, page_id, output_dir, download_images=True, download_diagrams=True):
     """Download attachments from a Confluence page.
 
@@ -17,6 +43,11 @@ def download_attachments(confluence_url, token, page_id, output_dir, download_im
         download_images: Whether to download image files (default: True)
         download_diagrams: Whether to download draw.io diagram files (default: True)
     """
+    # Resolve the output directory for Docker environment
+    resolved_output_dir = resolve_output_path(output_dir)
+    print(f"Output directory: {output_dir}")
+    print(f"Resolved path: {resolved_output_dir}")
+
     # Initialize Confluence client
     confluence = Confluence(
         url=confluence_url,
@@ -32,8 +63,8 @@ def download_attachments(confluence_url, token, page_id, output_dir, download_im
         return
 
     # Create output directories
-    os.makedirs(output_dir, exist_ok=True)
-    diagrams_dir = os.path.join(output_dir, "diagrams")
+    os.makedirs(resolved_output_dir, exist_ok=True)
+    diagrams_dir = os.path.join(resolved_output_dir, "diagrams")
     if download_diagrams:
         os.makedirs(diagrams_dir, exist_ok=True)
 
@@ -68,7 +99,7 @@ def download_attachments(confluence_url, token, page_id, output_dir, download_im
             filename = title if title.endswith('.drawio') else f"{title}.drawio"
             output_path = os.path.join(diagrams_dir, filename)
         else:
-            output_path = os.path.join(output_dir, title)
+            output_path = os.path.join(resolved_output_dir, title)
 
         # Construct download URL
         download_path = attachment['_links']['download']

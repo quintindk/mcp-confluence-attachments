@@ -59,7 +59,7 @@ docker build -t mcp-confluence-attachments .
 If you're using Claude Code, you can add the MCP server with a single command:
 
 ```bash
-claude mcp add confluence-attachments -s user -- sh -c "docker run -i --rm -e MCP_DEBUG=false -v \$(pwd):/app -e LOG_LEVEL=INFO -e MCP_TRANSPORT=stdio -e CONFLUENCE_URL=https://your-instance.atlassian.net -e CONFLUENCE_PERSONAL_TOKEN=\$CONFLUENCE_TOKEN mcp-confluence-attachments"
+claude mcp add confluence-attachments -s user -- sh -c "docker run -i --rm -e MCP_DEBUG=false -v \$(pwd):/output -e LOG_LEVEL=INFO -e MCP_TRANSPORT=stdio -e CONFLUENCE_URL=https://your-instance.atlassian.net -e CONFLUENCE_PERSONAL_TOKEN=\$CONFLUENCE_TOKEN mcp-confluence-attachments"
 ```
 
 **Important notes:**
@@ -68,7 +68,7 @@ claude mcp add confluence-attachments -s user -- sh -c "docker run -i --rm -e MC
   ```bash
   export CONFLUENCE_TOKEN="your_personal_access_token"
   ```
-- The `-v $(pwd):/app` volume mount ensures downloaded files appear in your current working directory
+- The `-v $(pwd):/output` volume mount ensures downloaded files appear in your current working directory
 - The `-s user` flag installs the server for your user account only
 
 ## MCP Server Usage
@@ -134,7 +134,7 @@ For Claude Desktop, add to your config file:
       "command": "sh",
       "args": [
         "-c",
-        "cd \"$(pwd)\" && docker run -i --rm -v $(pwd):/app -e MCP_TRANSPORT=stdio -e CONFLUENCE_URL=https://your-instance.atlassian.net -e CONFLUENCE_PERSONAL_TOKEN=$CONFLUENCE_TOKEN mcp-confluence-attachments"
+        "cd \"$(pwd)\" && docker run -i --rm -v $(pwd):/output -e MCP_TRANSPORT=stdio -e CONFLUENCE_URL=https://your-instance.atlassian.net -e CONFLUENCE_PERSONAL_TOKEN=$CONFLUENCE_TOKEN mcp-confluence-attachments"
       ]
     }
   }
@@ -215,7 +215,7 @@ For stdio mode (used by Claude Code and Claude Desktop), you need to mount your 
 
 ```bash
 docker run -i --rm \
-  -v $(pwd):/app \
+  -v $(pwd):/output \
   -e MCP_TRANSPORT=stdio \
   -e CONFLUENCE_URL="https://your-instance.atlassian.net" \
   -e CONFLUENCE_PERSONAL_TOKEN="your-token-here" \
@@ -223,9 +223,10 @@ docker run -i --rm \
 ```
 
 **Why the volume mount?**
-- Without `-v $(pwd):/app`, files are written inside the container and aren't accessible on your host
-- The mount makes the current directory available at `/app` in the container (the container's working directory)
+- Without `-v $(pwd):/output`, files are written inside the container and aren't accessible on your host
+- The mount makes the current directory available at `/output` in the container
 - Downloaded files will appear in your current directory on the host
+- When using relative paths (e.g., `./downloads`), they will be resolved relative to `/output` in the container
 
 ### Running the MCP Server (HTTP/SSE Mode)
 

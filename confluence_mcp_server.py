@@ -3,6 +3,7 @@
 
 import logging
 import logging.config
+import os
 import sys
 import uvicorn
 from mcp.server.fastmcp import FastMCP
@@ -26,6 +27,32 @@ def log(message: str, level: str = "info"):
     """Helper function for consistent logging."""
     log_func = getattr(logger, level.lower(), logger.info)
     log_func(message)
+
+
+def resolve_output_path(path: str) -> str:
+    """Resolve output path for Docker container environment.
+
+    When running in Docker with a mounted /output directory, this function
+    ensures that relative paths are written to /output instead of /app.
+
+    Args:
+        path: The path provided by the user (relative or absolute)
+
+    Returns:
+        Resolved absolute path appropriate for the environment
+    """
+    # If path is already absolute, use it as-is
+    if os.path.isabs(path):
+        return path
+
+    # Check if we're in a Docker container with /output mount
+    # We detect this by checking if /output exists and we're not in a standard dev environment
+    if os.path.exists('/output') and not os.path.exists('/output/.git'):
+        # Prepend /output/ to relative paths
+        return os.path.join('/output', path)
+
+    # For local development, use the path as provided (relative to current directory)
+    return path
 
 
 def get_confluence_client():
@@ -167,14 +194,18 @@ def download_all_attachments(page_id: str, output_dir: str,
     page_id = str(page_id)
     output_dir = str(output_dir)
 
+    # Resolve the output directory for Docker environment
+    resolved_output_dir = resolve_output_path(output_dir)
+
     log(f"Downloading attachments from page {page_id} to {output_dir}")
+    log(f"Resolved path: {resolved_output_dir}")
     log(f"Filters - images: {download_images}, diagrams: {download_diagrams}")
 
     try:
         client = get_confluence_client()
         results = client.download_attachments(
             page_id,
-            output_dir,
+            resolved_output_dir,
             download_images,
             download_diagrams
         )
@@ -225,7 +256,11 @@ def download_specific_attachment(page_id: str, attachment_id: str, output_path: 
     attachment_id = str(attachment_id)
     output_path = str(output_path)
 
+    # Resolve the output path for Docker environment
+    resolved_output_path = resolve_output_path(output_path)
+
     log(f"Downloading attachment {attachment_id} from page {page_id} to {output_path}")
+    log(f"Resolved path: {resolved_output_path}")
 
     try:
         client = get_confluence_client()
@@ -243,7 +278,7 @@ def download_specific_attachment(page_id: str, attachment_id: str, output_path: 
         result = client.download_attachment(
             attachment_id,
             metadata['downloadUrl'],
-            output_path
+            resolved_output_path
         )
         result['title'] = metadata['title']
 
