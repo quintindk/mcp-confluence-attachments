@@ -45,9 +45,9 @@ def resolve_output_path(path: str) -> str:
     if os.path.isabs(path):
         return path
 
-    # Check if we're in a Docker container with /output mount
-    # We detect this by checking if /output exists and we're not in a standard dev environment
-    if os.path.exists('/output') and not os.path.exists('/output/.git'):
+    # Check if we're in a Docker container by seeing if /output exists
+    # and we're running from /app (the container's WORKDIR)
+    if os.path.exists('/output') and os.getcwd() == '/app':
         # Prepend /output/ to relative paths
         return os.path.join('/output', path)
 
